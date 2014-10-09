@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Stock Quotes</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="hint_stock_symbol"> Stock Symbol</string>
+    <string name="search">Search</string>
+
+</resources>

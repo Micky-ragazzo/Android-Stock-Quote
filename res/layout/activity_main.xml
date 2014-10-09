@@ -1,0 +1,32 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="${relativePackage}.${activityClass}" >
+    
+    <EditText android:id="@+id/input_stock_symbol"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="@string/hint_stock_symbol"/>
+    
+    <Button android:id="@+id/search_button"
+        android:layout_toRightOf="@id/input_stock_symbol"
+        android:layout_toEndOf="@id/input_stock_symbol"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/search"/>
+
+    <TextView android:id="@+id/stock_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/input_stock_symbol"
+        android:textSize="40sp"/>
+    
+    <TextView android:id="@+id/stock_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/stock_name"
+        android:textSize="40sp"/>
+    
+</RelativeLayout>
