@@ -3,11 +3,13 @@ package com.holbrookj.stockquotes;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Timer;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.WaitingThread;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,9 +41,19 @@ public class MainActivity extends Activity {
 	private final static String fields = "fields";
 	private final static String name = "name";
 	private final static String price = "price";
+	
+	//[AutoUpdate]
+	private boolean shouldUpdate = false;
+	//boolean to check if a thread already running
+	private boolean danielFlag = false; //named by my roommate Jon
+	private boolean frankFlag = false; //named by my other roommate Melinda
+	AsyncTask<String, JSONObject, JSONObject> currentThread;
 
+	AsyncTask<String,JSONObject,JSONObject> newThread;
+	Timer timer;
 	
 	String stockName, stockValue;
+	long sleepTime = 10000;
 	
 	
 	@Override
@@ -61,7 +73,17 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(View v) {
-				new JSONParse().execute();
+				shouldUpdate = false;
+				if(danielFlag){
+					if(shouldUpdate){
+						newThread = new JSONParse().execute();
+					}
+				}
+				else if(!danielFlag){
+					currentThread = new JSONParse().execute();
+				}
+				
+				
 			}
 		});
 	}
@@ -76,47 +98,72 @@ public class MainActivity extends Activity {
 	 * 
 	 * Note: This is (and must be) an asynchronous task so that network operations 
 	 * are NOT done on the UI thread.
+	 * 
+	 * [AutoUpdate] Addition:  added code to update the stock price every 10 seconds.
+	 * TODO BUG:  not allowing changing of stock symbol after the first run.
 	 */
-	private class JSONParse extends AsyncTask<String, String, JSONObject>{
+	private class JSONParse extends AsyncTask<String, JSONObject, JSONObject>{
 		String input = "";
 		
 		@Override
 		protected void onPreExecute() {
+			shouldUpdate=true;
+			if(danielFlag){
+				currentThread.cancel(true);
+			}
+			input = stockSymbol.getText().toString();	
 			super.onPreExecute();
-			input = stockSymbol.getText().toString();
+						
 		}
-		
 		@Override
 		protected JSONObject doInBackground(String... params) {
-			System.out.println(input);
-			String jsonString = fetchJsonString(input);
-			try {
-				jsonObj = new JSONObject(jsonString);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
+			do{
+				System.out.println(input);
+				String jsonString = fetchJsonString(input);
+				try {
+					jsonObj = new JSONObject(jsonString);
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+				if(isCancelled()){
+					break;
+				}
+				publishProgress(jsonObj);
+				try {
+					Thread.sleep(sleepTime);
+					modifySleepTime(sleepTime);
+					
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}while(shouldUpdate); 
+			//loops until canceled or new search is started
+			frankFlag=true;
 			return jsonObj;
+		}
+		
+
+		protected void onProgressUpdate(JSONObject ... jsonObjectArray) {
+			for (JSONObject result : jsonObjectArray) {
+				try {
+					JSONObject jsonList = result.getJSONObject(list);
+					JSONArray jsonResources = jsonList.getJSONArray(resources);
+
+					JSONObject jsonRes = jsonResources.getJSONObject(0);
+					System.out.println(jsonRes);
+					JSONObject jsonResource = jsonRes.getJSONObject(resource);
+					JSONObject jsonFields = jsonResource.getJSONObject(fields);
+					stockName = jsonFields.getString(name);
+					stockValue = jsonFields.getString(price);
+					displayStockName.setText(stockName);
+					displayStockValue.setText(stockValue);
+				} catch (JSONException jsonEx) {
+					jsonEx.printStackTrace();
+				}
+			}
 		}
 		@Override
 		protected void onPostExecute(JSONObject result) {
-			
-			try{
-				JSONObject jsonList = result.getJSONObject(list);
-				JSONArray jsonResources = jsonList.getJSONArray(resources);
-				
-				JSONObject jsonRes = jsonResources.getJSONObject(0);
-				System.out.println(jsonRes);
-				JSONObject jsonResource = jsonRes.getJSONObject(resource);
-				JSONObject jsonFields = jsonResource.getJSONObject(fields); 
-				stockName = jsonFields.getString(name);
-				stockValue = jsonFields.getString(price);
-				displayStockName.setText(stockName);
-				displayStockValue.setText(stockValue);
-				
-			}catch(JSONException jsonEx){
-				jsonEx.printStackTrace();
-			}
-			
 			super.onPostExecute(result);
 		}
 	}
@@ -173,4 +220,12 @@ public class MainActivity extends Activity {
 		return jsonText;
 
 	}
+
+
+	private void modifySleepTime(long sleepTime) {
+		
+		
+	}
 }
+
+
